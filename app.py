@@ -4,7 +4,6 @@ import psycopg2
 import psycopg2.extras
 import uuid
 import calendar
-import socket
 
 app = Flask(__name__)
 
@@ -23,8 +22,6 @@ create_table = "CREATE TABLE data(id uuid NOT NULL PRIMARY KEY, n_terms varchar,
 cursor.execute(create_table)
 connection.commit()
 
-# cur.close()
-# con.close()
 
 @app.route('/')
 def index():
@@ -32,15 +29,14 @@ def index():
 
 @app.route('/fibonacci/<nValue>', methods=['POST'])
 def fibonacci(nValue):
-  if request.method == 'POST':
-    seq = initiateSequence(int(nValue))
-    id = uuid.uuid4()
-    insert_query = """INSERT INTO data (id, n_terms, sequence, time_submitted) VALUES (%s, %s, %s, %s)"""
-    time_submitted = datetime.now()
-    new_data = (id, int(nValue), seq, time_submitted)
-    cursor.execute(insert_query, new_data)
-    connection.commit()
-    return render_template('index.html', sequence=seq)
+  seq = initiateSequence(int(nValue))
+  id = uuid.uuid4()
+  insert_query = """INSERT INTO data (id, n_terms, sequence, time_submitted) VALUES (%s, %s, %s, %s)"""
+  time_submitted = datetime.now()
+  new_data = (id, int(nValue), seq, time_submitted)
+  cursor.execute(insert_query, new_data)
+  connection.commit()
+  return render_template('index.html', sequence=seq)
 
 @app.route('/fibonacci/requests/<monthYear>', methods=['POST'])
 def monthYearRequests(monthYear):
@@ -79,7 +75,16 @@ def monthYearRequests(monthYear):
 
   return render_template('index.html', monthlyRequests={
     "summary": summaryArray
-  })  
+  }) 
+
+@app.route('/fibonacci/input/<date>', methods=['POST'])
+def addRequest(date):
+  id = uuid.uuid4()
+  newTime = datetime.strptime(date, "%m-%d-%Y")
+  insert_query = """INSERT INTO data (id, time_submitted) VALUES (%s, %s)"""
+  new_data = (id, newTime)
+  cursor.execute(insert_query, new_data)
+  return "success"
 
 def initiateSequence(num):
   if (num <= 0):
